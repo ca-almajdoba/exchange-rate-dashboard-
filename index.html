@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exchange Rate Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --border:#e5e7eb;
+  --text:#111827;
+  --muted:#6b7280;
+  --accent:#2563eb;
+  --header:#000000;
+}
+
+body.dark{
+  --bg:#0b0f14;
+  --card:#121826;
+  --border:#1f2937;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --accent:#3b82f6;
+  --header:#000000;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Inter,system-ui,Segoe UI,Arial;
+  background:var(--bg);
+  color:var(--text);
+  transition:.3s;
+}
+
+.wrap{max-width:1200px;margin:40px auto;padding:0 20px;}
+
+.card{
+  background:var(--card);
+  border-radius:18px;
+  box-shadow:0 20px 40px rgba(0,0,0,.25);
+  overflow:hidden;
+}
+
+.header{
+  padding:24px;
+  background:var(--header);
+  color:#fff;
+}
+
+.header-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.header h1{margin:0;font-size:22px;font-weight:700}
+.pair{font-size:14px;opacity:.85}
+
+.dev-line{margin-top:6px;font-size:12px;opacity:.85}
+
+.dark-toggle{
+  background:#111;
+  border:1px solid #333;
+  color:#fff;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+}
+
+.content{display:grid;grid-template-columns:380px 1fr}
+@media(max-width:900px){.content{grid-template-columns:1fr}}
+
+.controls{
+  padding:24px;
+  border-right:1px solid var(--border);
+}
+
+.field{margin-bottom:16px}
+
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+
+select,input{
+  width:100%;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--text);
+}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.converter{
+  padding:16px;
+  border:1px dashed var(--border);
+  border-radius:14px;
+}
+
+.converter b{font-size:20px;color:var(--accent)}
+
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+
+button{
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  background:var(--accent);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+button.secondary{
+  background:transparent;
+  color:var(--accent);
+  border:1px solid var(--accent);
+}
+
+.meta{margin-top:16px;font-size:12px;color:var(--muted)}
+
+.chart-box{padding:24px}
+canvas{max-height:420px}
+
+.footer{
+  text-align:center;
+  padding:14px;
+  border-top:1px solid var(--border);
+  font-size:12px;
+}
+.footer a{color:var(--accent);text-decoration:none;font-weight:600}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+<div class="card">
+
+<div class="header">
+  <div class="header-top">
+    <h1>Exchange Rate Dashboard</h1>
+    <button class="dark-toggle" id="darkBtn">🌙 Dark</button>
+  </div>
+  <div class="pair" id="pairTxt">USD → JOD</div>
+  <div class="dev-line">
+    <strong>DEVELOPED BY : CFO SOLUTIONS EST. / WEBSITE: www.cfosolutions.me</strong>
+  </div>
+</div>
+
+<div class="content">
+
+<div class="controls">
+
+<div class="grid-2">
+  <div class="field">
+    <label>Base Currency</label>
+    <select id="base"></select>
+  </div>
+  <div class="field">
+    <label>Quote Currency</label>
+    <select id="quote"></select>
+  </div>
+</div>
+
+<div class="converter">
+  <div class="field">
+    <label>Amount</label>
+    <input id="amount" type="number" value="1">
+  </div>
+  Converted Amount<br>
+  <b id="converted">—</b>
+</div>
+
+<div class="grid-2" style="margin-top:12px;">
+  <div class="field">
+    <label>Auto Refresh (min)</label>
+    <input id="refreshMin" type="number" value="60">
+  </div>
+  <div class="field">
+    <label>Chart Points</label>
+    <input id="points" type="number" value="40">
+  </div>
+</div>
+
+<div class="actions">
+  <button id="btnRefresh">Refresh</button>
+  <button id="btnReset" class="secondary">Reset</button>
+</div>
+
+<div class="meta">
+  Rate: <b id="rateTxt">—</b><br>
+  Last Update: <b id="lastTxt">—</b><br>
+  Data Date: <b id="dataDateTxt">—</b>
+</div>
+
+</div>
+
+<div class="chart-box">
+  <canvas id="fxChart"></canvas>
+</div>
+
+</div>
+
+<div class="footer">
+  <a href="https://www.cfosolutions.me" target="_blank">www.cfosolutions.me</a>
+</div>
+
+</div>
+</div>
+
+<script>
+document.getElementById("darkBtn").onclick=()=>{
+  document.body.classList.toggle("dark");
+};
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+const PRIMARY="https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1";
+const FALLBACK="https://latest.currency-api.pages.dev/v1";
+const $=id=>document.getElementById(id);
+
+let chart=null,timer=null,currentRate=0;
+const state={labels:[],values:[]};
+
+async function fetchJson(path){
+  try{
+    const r=await fetch(PRIMARY+path,{cache:"no-store"});
+    if(!r.ok)throw 0;
+    return await r.json();
+  }catch{
+    const r=await fetch(FALLBACK+path,{cache:"no-store"});
+    return await r.json();
+  }
+}
+
+function updatePair(){
+  pairTxt.textContent=`${base.value} → ${quote.value}`;
+}
+
+function drawChart(){
+  if(chart)chart.destroy();
+  chart=new Chart(fxChart,{
+    type:"line",
+    data:{labels:state.labels,datasets:[{data:state.values,borderWidth:3,tension:.35,pointRadius:0}]},
+    options:{plugins:{legend:{display:false}}}
+  });
+}
+
+function calculate(){
+  converted.textContent=currentRate
+    ? (amount.value*currentRate).toLocaleString(undefined,{maximumFractionDigits:6})+" "+quote.value
+    : "—";
+}
+
+async function loadCurrencies(){
+  const cur=await fetchJson("/currencies.json");
+  Object.keys(cur).sort().forEach(c=>{
+    base.add(new Option(c.toUpperCase(),c.toUpperCase()));
+    quote.add(new Option(c.toUpperCase(),c.toUpperCase()));
+  });
+  base.value="USD";quote.value="JOD";
+}
+
+async function refresh(){
+  updatePair();
+  const data=await fetchJson(`/currencies/${base.value.toLowerCase()}.json`);
+  currentRate=data[base.value.toLowerCase()][quote.value.toLowerCase()];
+  rateTxt.textContent=currentRate.toFixed(6);
+  lastTxt.textContent=new Date().toLocaleString();
+  dataDateTxt.textContent=data.date;
+  state.labels.push(new Date().toLocaleTimeString());
+  state.values.push(currentRate);
+  drawChart();
+  calculate();
+}
+
+btnRefresh.onclick=refresh;
+btnReset.onclick=()=>location.reload();
+amount.oninput=calculate;
+base.onchange=quote.onchange=refresh;
+
+(async()=>{
+  await loadCurrencies();
+  await refresh();
+})();
+});
+</script>
+
+</body>
+</html>
