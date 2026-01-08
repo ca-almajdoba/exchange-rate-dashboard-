@@ -6,7 +6,7 @@ Built with **HTML, CSS, and Vanilla JavaScript**, featuring **Dark Mode** and a 
 ---
 
 ## 🌍 Live Demo
-https://ca-almajdoba.github.io/exchange-rate-dashboard-/
+https://cfo-solutions-jordan.github.io/exchange-rate-dashboard-/ 
 
 ---
 
